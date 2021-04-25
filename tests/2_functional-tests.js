@@ -35,7 +35,7 @@ suite('Functional Tests', function() {
         .query({ stock: 'aapl', like: true })
         .end((err, res) => {
           assert.equal(res.status, 200);
-          assert.equal(res.body, res.body);
+          assert.equal(res.body, 'Error: Only 1 Like per IP allowed');
           done();
         });
     });
@@ -47,7 +47,7 @@ suite('Functional Tests', function() {
           let stockData = res.body['stockData'];
           assert.isArray(stockData);
 
-          if (stockData[0] === 'fb') {
+          if (stockData[0]['stock'] === 'fb') {
             assert.equal(res.status, 200);
             assert.equal(stockData[0]['stock'], 'fb');
             assert.equal(stockData[0]['likes'], 0);
@@ -73,7 +73,7 @@ suite('Functional Tests', function() {
         .query({stock: ['spot', 'baba'], like: true})
         .end((err, res) => {
           let stockData = res.body.stockData;
-          if (stockData[0] === 'spot') {
+          if (stockData[0]['stock'] === 'spot') {
             assert.equal(res.status, 200);
             assert.equal(stockData[0]['stock'], 'spot');
             assert.equal(stockData[0]['likes'], 1);

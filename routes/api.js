@@ -51,7 +51,7 @@ module.exports = function (app) {
       let likeStock = (stockName, nextStep) => {
         Stock.findOne({ name: stockName }, (err, stockDocument) => {
           if (!err && stockDocument && stockDocument['ips'] && stockDocument['ips'].includes(req.ip)) {
-            return res.send('Error: Only 1 Like per IP allowed');
+            return res.json('Error: Only 1 Like per IP allowed');
           } else {
             let documentUpdate = {$inc: {likes: 1}, $push: {ips: req.ip}};
             nextStep(stockName, documentUpdate, getPrice);
