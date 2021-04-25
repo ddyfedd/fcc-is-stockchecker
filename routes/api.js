@@ -41,13 +41,22 @@ module.exports = function (app) {
             } else if(!err && stockDocument) {
               if(twoStocks === false) {
                 return nextStep(stockDocument, processOneStock);
+              } else {
+                return nextStep(stockDocument, processTwoStock);
               }
             }
           });
       };
 
       let likeStock = (stockName, nextStep) => {
-
+        Stock.findOne({ name: stockName }, (err, stockDocument) => {
+          if (!err && stockDocument && stockDocument['ips'] && stockDocument['ips'].includes(req.ip)) {
+            return res.send('Error: Only 1 Like per IP allowed');
+          } else {
+            let documentUpdate = {$inc: {likes: 1}, $push: {ips: req.ip}};
+            nextStep(stockName, documentUpdate, getPrice);
+          }
+        });
       };
 
       let getPrice = (stockDocument, nextStep) => {
@@ -71,17 +80,51 @@ module.exports = function (app) {
 
       let stocks = [];
       let processTwoStock = (stockDocument, nextStep) => {
+        let newStock = {};
+        newStock['stock'] = stockDocument['name'];
+        newStock['price'] = stockDocument['price'];
+        newStock['likes'] = stockDocument['likes'];
 
+        stocks.push(newStock);
+
+        if (stocks.length === 2) {
+          stocks[0]['rel_likes'] = stocks[0]['likes'] - stocks[1]['likes'];
+          stocks[1]['rel_likes'] = stocks[1]['likes'] - stocks[0]['likes'];
+          responseObject['stockData'] = stocks;
+          nextStep()
+        } else {
+          return;
+        }
       };
 
       if (typeof (req.query.stock) === 'string') {
         let stockName = req.query.stock;
 
         let documentUpdate = {};
-        findOrUpdateStock(stockName, documentUpdate, getPrice);
+        if (req.query.like && req.query.like === 'true') {
+          likeStock(stockName, findOrUpdateStock);
+        } else {
+          findOrUpdateStock(stockName, documentUpdate, getPrice);
+        }
 
       } else if (Array.isArray(req.query.stock)) {
+        twoStocks = true;
 
+        let stockName = req.query.stock[0];
+        if (req.query.like && req.query.like === 'true') {
+          likeStock(stockName, findOrUpdateStock);
+        } else {
+          let documentUpdate = {};
+          findOrUpdateStock(stockName, documentUpdate, getPrice);
+        }
+
+        stockName = req.query.stock[1];
+        if (req.query.like && req.query.like === 'true') {
+          likeStock(stockName, findOrUpdateStock);
+        } else {
+          let documentUpdate = {};
+          findOrUpdateStock(stockName, documentUpdate, getPrice);
+        }
       }
       
     });

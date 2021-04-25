@@ -26,6 +26,8 @@ app.use(helmet.contentSecurityPolicy({
   }
 }));
 
+app.enable('trust proxy');
+
 //Index page (static HTML)
 app.route('/')
   .get(function (req, res) {
